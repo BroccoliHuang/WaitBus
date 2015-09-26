@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">AmyBus</string>
+    <string name="db_databases_name">AmyBus.db</string>
+</resources>
