@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "tw.broccoli.amybus"
-        minSdkVersion 14
+        minSdkVersion 16
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
@@ -28,4 +28,5 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:+'
     compile 'org.jsoup:jsoup:+'
     compile 'com.afollestad:material-dialogs:+'
+    compile 'com.eftimoff:android-pathview:+@aar'
 }

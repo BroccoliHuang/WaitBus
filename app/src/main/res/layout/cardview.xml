@@ -20,10 +20,11 @@
         <TextView android:id="@+id/textview_bus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingTop="16dp"
-            android:paddingBottom="4dp"
-            android:paddingRight="16dp"
+            android:paddingTop="18dp"
+            android:paddingBottom="8dp"
+            android:paddingRight="4dp"
             android:layout_toRightOf="@+id/imageview_theminions"
+            android:layout_toLeftOf="@+id/framelayout_alarm"
             android:layout_alignParentTop="true"
             android:textSize="24sp" />
 
@@ -31,10 +32,37 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingBottom="16dp"
-            android:paddingRight="16dp"
+            android:paddingRight="4dp"
             android:layout_toRightOf="@+id/imageview_theminions"
+            android:layout_toLeftOf="@+id/framelayout_alarm"
             android:layout_below="@+id/textview_bus"
-            android:textSize="16sp" />
+            android:textSize="17sp" />
+
+        <FrameLayout android:id="@+id/framelayout_alarm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:paddingRight="4dp">
+
+            <com.eftimoff.androipathview.PathView
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:id="@+id/pathView_alarm_off"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:visibility="gone"
+                app:svg="@raw/alarm_off"
+                app:pathWidth="4"/>
+
+            <com.eftimoff.androipathview.PathView
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:id="@+id/pathView_alarm_on"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:visibility="gone"
+                app:svg="@raw/alarm_on"
+                app:pathWidth="4"/>
+        </FrameLayout>
 
     </RelativeLayout>
 

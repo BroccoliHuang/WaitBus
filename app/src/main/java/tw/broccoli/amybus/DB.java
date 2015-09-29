@@ -20,6 +20,7 @@ public class DB extends SQLiteOpenHelper {
     public final static String BUS_DIRECT_PARAM = "bus_direct_param";
     public final static String BUS_DIRECT_TEXT = "bus_direct_text";
     public final static String BUS_ONBUS = "bus_onbus";
+    public final static String BUS_ALARM = "bus_alarm";
 
     /**setting資料表*/
     public final static String SETTING_TABLE = "setting";
@@ -38,8 +39,9 @@ public class DB extends SQLiteOpenHelper {
                 BUS_RID + " TEXT," +
                 BUS_DIRECT_PARAM + " TEXT," +
                 BUS_DIRECT_TEXT + " TEXT," +
-                BUS_ONBUS + " TEXT)");
-        db.execSQL( "CREATE TABLE " + SETTING_TABLE + " (" +
+                BUS_ONBUS + " TEXT," +
+                BUS_ALARM + " TEXT)");
+        db.execSQL("CREATE TABLE " + SETTING_TABLE + " (" +
                 SETTING_ID + " INTEGER primary key autoincrement)");
     }
 
@@ -74,7 +76,8 @@ public class DB extends SQLiteOpenHelper {
                 " AND "+BUS_RID+" = \""+bus.getRid()+"\""+
                 " AND "+BUS_DIRECT_PARAM+" = \""+bus.getDirectParam()+"\""+
                 " AND "+BUS_DIRECT_TEXT+" = \""+bus.getDirectText()+"\""+
-                " AND "+BUS_ONBUS+" = \""+bus.getOnBus()+"\")");
+                " AND "+BUS_ONBUS+" = \""+bus.getOnBus()+"\""+
+                " AND "+BUS_ALARM+" = \""+bus.getAlarm()+"\")");
         if(cursor.getCount()>0){
             cursor.close();
 
@@ -93,6 +96,7 @@ public class DB extends SQLiteOpenHelper {
         cv.put(BUS_DIRECT_PARAM, bus.getDirectParam());
         cv.put(BUS_DIRECT_TEXT, bus.getDirectText());
         cv.put(BUS_ONBUS, bus.getOnBus());
+        cv.put(BUS_ALARM, Alarm.getString(bus.getAlarm()));
 
         long rowId = db.insert(BUS_TABLE, null, cv);
         if(rowId == -1){
@@ -110,23 +114,40 @@ public class DB extends SQLiteOpenHelper {
         return result;
     }
 
+    void updateBusAlarm(Bus bus){
+        ContentValues values = new ContentValues();
+
+        values.put(BUS_ALARM, Alarm.getString(bus.getAlarm()));
+
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        db.update(BUS_TABLE,
+                values,
+                BUS_NUMBER + "=? AND " + BUS_RID + "=? AND " + BUS_DIRECT_PARAM + "=? AND " + BUS_DIRECT_TEXT + "=? AND " + BUS_ONBUS + "=?",
+                new String[]{bus.getNumber(), bus.getRid(), bus.getDirectParam(), bus.getDirectText(), bus.getOnBus()});
+    }
+
     void deleteBus(Bus bus) {
         if(!bus.isComplete()) return;
-//        getCursor("DELETE FROM "+BUS_TABLE+
-//                " WHERE ("+BUS_NUMBER+" = \""+bus.getNumber()+"\""+
-//                " AND "+BUS_RID+" = \""+bus.getRid()+"\""+
-//                " AND "+BUS_DIRECT_PARAM+" = \""+bus.getDirectParam()+"\""+
-//                " AND "+BUS_DIRECT_TEXT+" = \""+bus.getDirectText()+"\""+
-//                " AND "+BUS_ONBUS+" = \""+bus.getOnBus()+"\")");
 
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(BUS_TABLE,
-                BUS_NUMBER + "=? AND " + BUS_RID + "=? AND " + BUS_DIRECT_PARAM + "=? AND " + BUS_DIRECT_TEXT + "=? AND " + BUS_ONBUS + "=?",
-                new String[]{bus.getNumber(), bus.getRid(), bus.getDirectParam(), bus.getDirectText(), bus.getOnBus()});
+                BUS_NUMBER + "=? AND " + BUS_RID + "=? AND " + BUS_DIRECT_PARAM + "=? AND " + BUS_DIRECT_TEXT + "=? AND " + BUS_ONBUS + "=? AND " + BUS_ALARM + "=?",
+                new String[]{bus.getNumber(), bus.getRid(), bus.getDirectParam(), bus.getDirectText(), bus.getOnBus(), Alarm.getString(bus.getAlarm())});
         db.close();
     }
 
     Cursor getAllStop(){
         return getCursor("SELECT * FROM " + BUS_TABLE);
+    }
+
+    Cursor getAlarm(Bus bus){
+        return getCursor(
+                "SELECT "+BUS_ALARM+" FROM "+BUS_TABLE+
+                        " WHERE ("+BUS_NUMBER+" = \""+bus.getNumber()+"\""+
+                        " AND "+BUS_RID+" = \""+bus.getRid()+"\""+
+                        " AND "+BUS_DIRECT_PARAM+" = \""+bus.getDirectParam()+"\""+
+                        " AND "+BUS_DIRECT_TEXT+" = \""+bus.getDirectText()+"\""+
+                        " AND "+BUS_ONBUS+" = \""+bus.getOnBus()+"\")");
     }
 }

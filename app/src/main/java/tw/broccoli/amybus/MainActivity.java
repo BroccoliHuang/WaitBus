@@ -1,15 +1,21 @@
 package tw.broccoli.amybus;
 
+import android.graphics.Color;
 import android.os.AsyncTask;
-import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.view.Gravity;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ImageView;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 
@@ -22,13 +28,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements RecyclerViewAdapter.Callback{
     private final static String BUS_DIRECT_PARAM_AND_TEXT = "bus_direct_param_and_text";
 
+    private ImageView mImageViewCollapsing = null;
     private RecyclerView mRecyclerView = null;
     private RecyclerViewAdapter mRecyclerViewAdapter = null;
-    private FloatingActionButton mFloatingActionButton = null;
+    private ImageView mImageviewAdd = null;
 
     private List<Bus> mListBus = null;
     private Bus mAddBus = null;
@@ -39,8 +47,12 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        mFloatingActionButton = (FloatingActionButton)findViewById(R.id.floatingactionbutton);
+        mImageViewCollapsing = (ImageView)findViewById(R.id.imageview_collapsing);
+        mImageviewAdd = (ImageView)findViewById(R.id.imageview_add);
         mRecyclerView = (RecyclerView)findViewById(R.id.recyclerview);
+
+        int[] titleImage = {R.mipmap.main_title_ya, R.mipmap.main_title_pipi};
+        mImageViewCollapsing.setImageResource(titleImage[new Random().nextInt(titleImage.length)]);
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
@@ -69,25 +81,40 @@ public class MainActivity extends AppCompatActivity {
 
         mRecyclerView.addOnItemTouchListener(swipeTouchListener);
 
-        mRecyclerViewAdapter = new RecyclerViewAdapter();
+        mRecyclerViewAdapter = new RecyclerViewAdapter(MainActivity.this);
 
-        mListBus = BusDBHelper.getAllStop(MainActivity.this);
+        mListBus = BusDBHelper.getAllStop();
         mRecyclerViewAdapter.setListBus(mListBus);
         mRecyclerView.setAdapter(mRecyclerViewAdapter);
 
-        mFloatingActionButton.setOnClickListener(new View.OnClickListener() {
+        mImageviewAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 new getAllBus().execute();
             }
         });
+
+        initToolbar();
+    }
+
+    private void initToolbar() {
+        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        CollapsingToolbarLayout collapsingToolbar = (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar);
+
+        collapsingToolbar.setTitle("Amy Bus");
+        collapsingToolbar.setCollapsedTitleGravity(Gravity.RIGHT);
+        collapsingToolbar.setCollapsedTitleTextColor(Color.BLACK);
+        collapsingToolbar.setExpandedTitleGravity(Gravity.LEFT | Gravity.BOTTOM);
+        collapsingToolbar.setExpandedTitleColor(Color.WHITE);
     }
 
     private void insertBus(Bus bus){
-        BusDBHelper.requestAdd(MainActivity.this, bus);
+        BusDBHelper.requestAdd(bus);
 
         if(mListBus == null) mListBus = new ArrayList();
-        mRecyclerViewAdapter = new RecyclerViewAdapter();
+        mRecyclerViewAdapter = new RecyclerViewAdapter(MainActivity.this);
 
         mListBus.add(bus);
         mRecyclerViewAdapter.setListBus(mListBus);
@@ -97,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void removeBus(int position){
         if(mListBus == null) return;
-        BusDBHelper.requestDelete(MainActivity.this, mListBus.get(position));
+        BusDBHelper.requestDelete(mListBus.get(position));
 
         mListBus.remove(position);
         mRecyclerViewAdapter.setListBus(mListBus);
@@ -135,16 +162,18 @@ public class MainActivity extends AppCompatActivity {
             }
 
             new MaterialDialog.Builder(MainActivity.this)
+                    .typeface("erh_feng.ttc", "erh_feng.ttc")
                     .title("公車們")
                     .items(dialogBusNumber.toArray(new String[]{}))
                     .itemsCallback(new MaterialDialog.ListCallback() {
                         @Override
                         public void onSelection(MaterialDialog dialog, View view, int which, CharSequence text) {
-                            mAddBus = new Bus(text.toString(), list.get(which)[1], null, null, null);
+                            mAddBus = new Bus(text.toString(), list.get(which)[1], null, null, null, "");
                             new getDirect().execute();
                         }
                     })
-                    .positiveText("取消")
+                    .negativeText("取消")
+                    .negativeColorRes(android.R.color.black)
                     .show();
         }
 
@@ -182,12 +211,14 @@ public class MainActivity extends AppCompatActivity {
             if(map==null) return;
             super.onPostExecute(map);
 
+
             List<String> dialogDirect = new ArrayList<>();
             for(int temp = 0 ; temp<map.get(BUS_DIRECT_PARAM_AND_TEXT).size() ; temp++){
                 dialogDirect.add(map.get(BUS_DIRECT_PARAM_AND_TEXT).get(temp)[1]);
             }
 
             new MaterialDialog.Builder(MainActivity.this)
+                    .typeface("erh_feng.ttc", "erh_feng.ttc")
                     .title("方向")
                     .items(dialogDirect.toArray(new String[]{}))
                     .itemsCallback(new MaterialDialog.ListCallback() {
@@ -199,7 +230,8 @@ public class MainActivity extends AppCompatActivity {
                             loadHtmlSource(mAddBus);
                         }
                     })
-                    .positiveText("取消")
+                    .negativeText("取消")
+                    .negativeColorRes(android.R.color.black)
                     .show();
         }
 
@@ -221,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        wb.loadUrl("http://e-bus.tpc.gov.tw/NTPCRoute/Tw/Map?rid="+bus.getRid()+"&sec="+bus.getDirectParam());
+        wb.loadUrl("http://e-bus.tpc.gov.tw/NTPCRoute/Tw/Map?rid=" + bus.getRid() + "&sec=" + bus.getDirectParam());
     }
 
     private class MyJavaScriptInterface {
@@ -251,7 +283,8 @@ public class MainActivity extends AppCompatActivity {
             super.onPostExecute(stringArray);
 
             new MaterialDialog.Builder(MainActivity.this)
-                    .title("方向")
+                    .typeface("erh_feng.ttc", "erh_feng.ttc")
+                    .title("在哪一站等車呢?")
                     .items(stringArray)
                     .itemsCallback(new MaterialDialog.ListCallback() {
                         @Override
@@ -260,7 +293,8 @@ public class MainActivity extends AppCompatActivity {
                             insertBus(mAddBus);
                         }
                     })
-                    .positiveText("取消")
+                    .negativeText("取消")
+                    .negativeColorRes(android.R.color.black)
                     .show();
         }
 
@@ -268,5 +302,80 @@ public class MainActivity extends AppCompatActivity {
         protected void onPreExecute() {
             super.onPreExecute();
         }
+    }
+
+    @Override
+    public void onAlarm(final int position) {
+        String[] items = new String[62];
+        items[0] = "已到站";
+        items[1] = "將到站";
+        for(int temp = 2 ; temp<=61 ; temp++){
+            items[temp] = String.valueOf(temp-1);
+        }
+        new MaterialDialog.Builder(MainActivity.this)
+                .typeface("erh_feng.ttc", "erh_feng.ttc")
+                .title("幾分鐘內到站要提醒妳呢?")
+                .items(items)
+                .itemsCallback(new MaterialDialog.ListCallback() {
+                    @Override
+                    public void onSelection(MaterialDialog dialog, View view, int which, final CharSequence minute) {
+                        Integer[] defaultChoice = new Integer[]{};
+                        Alarm tempAlarm = BusDBHelper.getAlarm(mListBus.get(position));
+                        if (tempAlarm != null) {
+                            if (!"".equals(tempAlarm.getRing()) && tempAlarm.getRing() != null && tempAlarm.getVibrate()) {
+                                defaultChoice = new Integer[]{0, 1};
+                            } else if (!"".equals(tempAlarm.getRing()) && tempAlarm.getRing() != null) {
+                                defaultChoice = new Integer[]{0};
+                            } else if (tempAlarm.getVibrate()) {
+                                defaultChoice = new Integer[]{1};
+                            }
+                        }
+
+                        new MaterialDialog.Builder(MainActivity.this)
+                                .typeface("erh_feng.ttc", "erh_feng.ttc")
+                                .title("怎麼提醒妳呢?")
+                                .items(new String[]{"鈴聲", "震動"})
+                                .itemsCallbackMultiChoice(defaultChoice, new MaterialDialog.ListCallbackMultiChoice() {
+                                    @Override
+                                    public boolean onSelection(MaterialDialog dialog, Integer[] which, CharSequence[] text) {
+                                        return true;
+                                    }
+                                })
+                                .callback(new MaterialDialog.ButtonCallback() {
+                                    @Override
+                                    public void onPositive(MaterialDialog dialog) {
+                                        String string_ring_and_vibrate = "";
+                                        for (int temp = 0; temp < dialog.getSelectedIndices().length; temp++) {
+                                            string_ring_and_vibrate += dialog.getSelectedIndices()[temp];
+                                        }
+
+
+                                        Bus bus_update = BusDBHelper.getAllStop().get(position);
+                                        bus_update.setAlarm(new Alarm(minute.toString(), (string_ring_and_vibrate.contains("0") ? "default" : ""), (string_ring_and_vibrate.contains("1") ? true : false)));
+                                        BusDBHelper.requestUpdateAlarm(bus_update);
+
+                                        mRecyclerViewAdapter.notifyDataSetChanged();
+                                        mRecyclerView.requestLayout();
+
+                                        dialog.dismiss();
+                                    }
+
+                                    @Override
+                                    public void onNeutral(MaterialDialog dialog) {
+                                        dialog.clearSelectedIndices();
+                                    }
+                                })
+                                .alwaysCallMultiChoiceCallback()
+                                .positiveText("確定")
+                                .neutralText("清除")
+                                .autoDismiss(false)
+                                .positiveColorRes(android.R.color.black)
+                                .neutralColorRes(android.R.color.black)
+                                .show();
+                    }
+                })
+                .negativeText("取消")
+                .negativeColorRes(android.R.color.black)
+                .show();
     }
 }

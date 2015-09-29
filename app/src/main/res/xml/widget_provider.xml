@@ -4,5 +4,6 @@
     android:minHeight="72dp"
     android:resizeMode="vertical|horizontal"
     android:updatePeriodMillis="0"
+    android:previewImage="@mipmap/widget_preview_image"
     android:initialLayout="@layout/widget" >
 </appwidget-provider>

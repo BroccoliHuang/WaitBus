@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -24,56 +25,74 @@ import java.util.List;
 public class MyWidget extends AppWidgetProvider {
     public final static String BOARD_CLICK = "tw.broccoli.amybus.board_click";
 
-    private Context context_receive = null;
+    private static Context context_receive = null;
     private List<Bus> queue_bus = null;
+    private static String text = null;
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        Log.i("AmyBus", "onUpdate");
 
-        if(Common.getContextMyWidget() == null) Common.setContextMyWidget(context);
-        if(Common.getAppWidgetManager() == null) Common.setAppWidgetManager(appWidgetManager);
-        if(Common.getAppWidgetIds() == null) Common.setAppWidgetIds(appWidgetIds);
+//        if(Common.getContextMyWidget() == null) Common.setContextMyWidget(context);
+//        if(Common.getAppWidgetManager() == null) Common.setAppWidgetManager(appWidgetManager);
+//        if(Common.getAppWidgetIds() == null) Common.setAppWidgetIds(appWidgetIds);
 
-        RemoteViews updateViews = new RemoteViews(Common.getContextMyWidget().getPackageName(), R.layout.widget);
+        RemoteViews updateViews = new RemoteViews(context.getPackageName(), R.layout.widget);
 
-        updateViews.setOnClickPendingIntent(R.id.board, PendingIntent.getBroadcast(Common.getContextMyWidget(), 0, new Intent(BOARD_CLICK), 0));
+        updateViews.setOnClickPendingIntent(R.id.board, PendingIntent.getBroadcast(context, 0, new Intent(BOARD_CLICK), 0));
 
-        if(Common.getText() != null){
-            updateViews.setTextViewText(R.id.board, Common.getText());
+        if(text != null){
+            updateViews.setTextViewText(R.id.board, text);
         }
 
-        Common.getAppWidgetManager().updateAppWidget(Common.getAppWidgetIds(), updateViews);
+        appWidgetManager.updateAppWidget(appWidgetIds, updateViews);
     }
 
-    private void setText(String s){
+    private void setText(Context context, String s){
+        Log.i("AmyBus", "setText");
         if("".equals(s) || s == null){
-            Common.setText("");
-        }else {
-            Common.setText((Common.getText() == null ? "" : Common.getText()) + "\n" + s);
+            text = "";
+        }else{
+            if(text == null || "".equals(text)){
+                text = s;
+            }else{
+                if(!text.contains(s)){
+                    text = text + "\n" + s;
+                }
+            }
         }
-        onUpdate(Common.getContextMyWidget(), Common.getAppWidgetManager(), Common.getAppWidgetIds());
+//        onUpdate(context_receive, Common.getAppWidgetManager(), Common.getAppWidgetIds());
+
+        Intent intent = new Intent(context, MyWidget.class);
+        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+// Use an array and EXTRA_APPWIDGET_IDS instead of AppWidgetManager.EXTRA_APPWIDGET_ID,
+// since it seems the onUpdate() is only fired on that:
+//                int[] ids = {widgetId};
+        int ids[] = AppWidgetManager.getInstance(context).getAppWidgetIds(new ComponentName(context, MyWidget.class));
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids);
+        context.sendBroadcast(intent);
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     public void onReceive(Context context, final Intent intent) {
+        Log.i("AmyBus", "onReceive");
         super.onReceive(context, intent);
 
         context_receive = context;
 
         if(intent.getAction().equals(BOARD_CLICK)){
-            setText("");
+            setText(context, "");
+            context.startService(new Intent(context, AmyBusService.class));
         }else{
             return;
         }
 
-        queue_bus = BusDBHelper.getAllStop(context);
-        showBusTime();
+        queue_bus = BusDBHelper.getAllStop();
+        showBusTimeOnBoard(context);
     }
 
-    private void showBusTime(){
-        final WebView wb = new WebView(context_receive);
+    private void showBusTimeOnBoard(Context context){
+        final WebView wb = new WebView(context);
 
         wb.getSettings().setJavaScriptEnabled(true);
         wb.addJavascriptInterface(new MyJavaScriptInterface(), "HtmlViewer");
@@ -91,14 +110,12 @@ public class MyWidget extends AppWidgetProvider {
         @JavascriptInterface
         public void showHTML(String html) {
             new getBoard().execute(html);
-//            new getBoard().execute(new String[]{html, "捷運新埔站", "1"});
         }
     }
 
     private class getBoard extends AsyncTask<String, Void, String>{
         @Override
         protected String doInBackground(final String... params) {
-            Log.i("AmyBus", "doInBackground");
             final Document doc = Jsoup.parse(params[0]);
 
 //          指定站的狀況
@@ -108,26 +125,24 @@ public class MyWidget extends AppWidgetProvider {
                     return queue_bus.get(0).getNumber() + " - " + queue_bus.get(0).getDirectText() + " " + element_target.parent().parent().parent().children().first().children().first().text() + " 到 " + queue_bus.get(0).getOnBus();
                 }
             }
-            return null;
+            return "";
         }
 
         @Override
         protected void onPostExecute(String s) {
             Log.i("AmyBus", "onPostExecute");
             super.onPostExecute(s);
-            Log.i("AmyBus", "s="+s);
+            Log.i("AmyBus", s);
             if(s != null && !"".equals(s)) {
-                Log.i("AmyBus", "setTextViewText");
 
-
-                setText(s);
+                setText(context_receive, s);
 
                 queue_bus.remove(0);
 
-                if(queue_bus.size()>0) showBusTime();
+                if(queue_bus.size()>0) showBusTimeOnBoard(context_receive);
 
 //                initialUpdateViews(s);
-
+//
 //                Intent intent = new Intent(mContext, MyWidget.class);
 //                intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
 //// Use an array and EXTRA_APPWIDGET_IDS instead of AppWidgetManager.EXTRA_APPWIDGET_ID,
@@ -136,7 +151,6 @@ public class MyWidget extends AppWidgetProvider {
 //                int ids[] = AppWidgetManager.getInstance(mContext).getAppWidgetIds(new omponentName(mContext, MyWidget.class));
 //                intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids);
 //                Common.getInstance().sendBroadcast(intent);
-//                Log.i("AmyBus", "sendBroadcast");
 
             }
         }

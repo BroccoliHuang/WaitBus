@@ -3,13 +3,14 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@mipmap/the_minions">
+    android:background="@mipmap/widget_background">
 
-    <TextView android:id="@+id/board"
+    <TextView
+        android:id="@+id/board"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:gravity="bottom|center_horizontal"
         android:textColor="@android:color/black"
-        android:textSize="18sp"
-        android:text="點我開始"/>
+        android:textSize="16sp"
+        android:text=""/>
 </LinearLayout>

@@ -9,13 +9,24 @@ public class Bus {
     private String bus_direct_param = null;
     private String bus_direct_text = null;
     private String bus_onbus = null;
+    private Alarm bus_alarm = null;
 
-    public Bus(String bus_number, String bus_rid, String bus_direct_param, String bus_direct_text, String bus_onbus) {
+    public Bus(String bus_number, String bus_rid, String bus_direct_param, String bus_direct_text, String bus_onbus, Alarm bus_alarm) {
         this.bus_number = bus_number;
         this.bus_rid = bus_rid;
         this.bus_direct_param = bus_direct_param;
         this.bus_direct_text = bus_direct_text;
         this.bus_onbus = bus_onbus;
+        if(bus_alarm!=null) this.bus_alarm = bus_alarm;
+    }
+
+    public Bus(String bus_number, String bus_rid, String bus_direct_param, String bus_direct_text, String bus_onbus, String alarmString) {
+        this.bus_number = bus_number;
+        this.bus_rid = bus_rid;
+        this.bus_direct_param = bus_direct_param;
+        this.bus_direct_text = bus_direct_text;
+        this.bus_onbus = bus_onbus;
+        this.bus_alarm = Alarm.getAlarm(alarmString);
     }
 
     public boolean isComplete(){
@@ -42,6 +53,10 @@ public class Bus {
         this.bus_onbus = bus_onbus;
     }
 
+    public void setAlarm(Alarm bus_alarm) {
+        this.bus_alarm = bus_alarm;
+    }
+
     public String getNumber() {
         return bus_number;
     }
@@ -60,5 +75,9 @@ public class Bus {
 
     public String getOnBus() {
         return bus_onbus;
+    }
+
+    public Alarm getAlarm() {
+        return bus_alarm;
     }
 }
