@@ -18,7 +18,7 @@ import com.eftimoff.androipathview.PathView;
  * Created by Broccoli on 2015/9/27.
  */
 public class SplashActivity extends Activity{
-    private boolean debugMode = true;
+    private boolean debugMode = false;
     private boolean hasUmbrella = false;
 
     private int hasUmbrellaCount = 0;
@@ -60,7 +60,7 @@ public class SplashActivity extends Activity{
                 @Override
                 public void onClick(View v) {
                     hasUmbrellaCount++;
-                    if (hasUmbrellaCount >= 3) hasUmbrella = true;
+                    if (hasUmbrellaCount >= 6) hasUmbrella = true;
                 }
             });
 
@@ -77,7 +77,7 @@ public class SplashActivity extends Activity{
         animateCount++;
 
         pathView.getPathAnimator()
-                .delay(200)
+                .delay(300)
                 .duration(2000)
                 .listenerStart(null)
                 .listenerEnd(new PathView.AnimatorBuilder.ListenerEnd() {
@@ -117,10 +117,10 @@ public class SplashActivity extends Activity{
                                                         alphaAnimation.setDuration(500);
                                                         alphaAnimation.setFillAfter(true);
                                                         mTextViewADot.setX(510);
-                                                        mTextViewADot.setY(1018);
+                                                        mTextViewADot.setY(1070);
                                                         mTextViewADot.setVisibility(View.VISIBLE);
                                                         mTextViewBDot.setX(1010);
-                                                        mTextViewBDot.setY(1018);
+                                                        mTextViewBDot.setY(1070);
                                                         mTextViewBDot.setVisibility(View.VISIBLE);
                                                         mTextViewADot.setAnimation(alphaAnimation);
                                                         mTextViewBDot.setAnimation(alphaAnimation);
@@ -161,7 +161,7 @@ public class SplashActivity extends Activity{
                         finish();
                     }
                 },
-                1000
+                800
         );
     }
 }

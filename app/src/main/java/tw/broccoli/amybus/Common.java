@@ -24,7 +24,7 @@ public class Common extends Application {
         super.onCreate();
 //        Common.mContext = getApplicationContext();
         this.mContext = this;
-        overrideFont(getApplicationContext(), "SERIF", "fonts/erh_feng.ttc");
+        overrideFont(mContext.getApplicationContext(), "SERIF", "fonts/erh_feng.ttc");
     }
 
 //    public static Context getAppContext() {

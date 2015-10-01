@@ -1,6 +1,5 @@
 package tw.broccoli.amybus;
 
-import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -43,6 +42,8 @@ public class AmyBusService extends Service {
     private Runnable showTime = new Runnable() {
         public void run() {
             handler.postDelayed(showTime, 5000);
+
+            //TODO update MyWidgetProvider
 
             intentCancelNotifiaction();
         }

@@ -2,15 +2,18 @@ package tw.broccoli.amybus;
 
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.text.Spannable;
-import android.text.SpannableString;
+import android.util.Log;
+import android.view.DragEvent;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
@@ -22,6 +25,8 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.solovyev.android.views.llm.DividerItemDecoration;
+import org.solovyev.android.views.llm.LinearLayoutManager;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,10 +38,15 @@ import java.util.Random;
 public class MainActivity extends AppCompatActivity implements RecyclerViewAdapter.Callback{
     private final static String BUS_DIRECT_PARAM_AND_TEXT = "bus_direct_param_and_text";
 
+    private ImageView mImageViewBackground = null;
+    private AppBarLayout mAppBarLayout = null;
+    private Toolbar mToolbar = null;
+
     private ImageView mImageViewCollapsing = null;
     private RecyclerView mRecyclerView = null;
     private RecyclerViewAdapter mRecyclerViewAdapter = null;
     private ImageView mImageviewAdd = null;
+    private ImageView mImageViewHanging = null;
 
     private List<Bus> mListBus = null;
     private Bus mAddBus = null;
@@ -47,11 +57,30 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
 
         setContentView(R.layout.activity_main);
 
+        mImageViewBackground = (ImageView)findViewById(R.id.main_activity_background);
+        mAppBarLayout = (AppBarLayout)findViewById(R.id.appbar);
+        mToolbar = (Toolbar)findViewById(R.id.toolbar);
         mImageViewCollapsing = (ImageView)findViewById(R.id.imageview_collapsing);
         mImageviewAdd = (ImageView)findViewById(R.id.imageview_add);
+        mImageViewHanging = (ImageView)findViewById(R.id.imageview_hanging);
         mRecyclerView = (RecyclerView)findViewById(R.id.recyclerview);
 
-        int[] titleImage = {R.mipmap.main_title_ya, R.mipmap.main_title_pipi};
+        //為了讓RecyclerView可以android:layout_height="wrap_content"
+        final LinearLayoutManager layoutManager = new LinearLayoutManager(mRecyclerView, LinearLayoutManager.VERTICAL, false);
+        layoutManager.setOverScrollMode(ViewCompat.OVER_SCROLL_IF_CONTENT_SCROLLS);
+        mRecyclerView.setLayoutManager(layoutManager);
+        mRecyclerView.addItemDecoration(new DividerItemDecoration(this, null));
+
+
+        mAppBarLayout.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
+            @Override
+            public void onOffsetChanged(AppBarLayout appBarLayout, int y) {
+                int height = appBarLayout.getHeight() - mToolbar.getHeight();
+                mImageViewBackground.setAlpha(1 - Float.valueOf(y + height) / Float.valueOf(height));
+            }
+        });
+
+        int[] titleImage = {R.mipmap.main_title_ya, R.mipmap.main_title_pipi, R.mipmap.main_title_looksky};
         mImageViewCollapsing.setImageResource(titleImage[new Random().nextInt(titleImage.length)]);
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -86,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
         mListBus = BusDBHelper.getAllStop();
         mRecyclerViewAdapter.setListBus(mListBus);
         mRecyclerView.setAdapter(mRecyclerViewAdapter);
+        resetImageViewHanging();
 
         mImageviewAdd.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -120,6 +150,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
         mRecyclerViewAdapter.setListBus(mListBus);
         mRecyclerViewAdapter.notifyDataSetChanged();
         mRecyclerView.setAdapter(mRecyclerViewAdapter);
+        resetImageViewHanging();
     }
 
     private void removeBus(int position){
@@ -130,6 +161,15 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
         mRecyclerViewAdapter.setListBus(mListBus);
         mRecyclerViewAdapter.notifyDataSetChanged();
         mRecyclerView.setAdapter(mRecyclerViewAdapter);
+        resetImageViewHanging();
+    }
+
+    private void resetImageViewHanging(){
+        if(mListBus==null || mListBus.size()==0){
+            mImageViewHanging.setVisibility(View.GONE);
+        }else{
+            mImageViewHanging.setVisibility(View.VISIBLE);
+        }
     }
 
     private class getAllBus extends AsyncTask<Void, Void, List<String[]>> {
