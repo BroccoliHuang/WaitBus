@@ -29,4 +29,5 @@ dependencies {
     compile 'org.jsoup:jsoup:+'
     compile 'com.afollestad:material-dialogs:+'
     compile 'com.eftimoff:android-pathview:+@aar'
+    compile 'pl.droidsonroids.gif:android-gif-drawable:+'
 }

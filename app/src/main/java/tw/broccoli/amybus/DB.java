@@ -117,6 +117,11 @@ public class DB extends SQLiteOpenHelper {
     void updateBusAlarm(Bus bus){
         ContentValues values = new ContentValues();
 
+        values.put(BUS_NUMBER, bus.getNumber());
+        values.put(BUS_RID, bus.getRid());
+        values.put(BUS_DIRECT_PARAM, bus.getDirectParam());
+        values.put(BUS_DIRECT_TEXT, bus.getDirectText());
+        values.put(BUS_ONBUS, bus.getOnBus());
         values.put(BUS_ALARM, Alarm.getString(bus.getAlarm()));
 
         SQLiteDatabase db = this.getWritableDatabase();
@@ -145,8 +150,8 @@ public class DB extends SQLiteOpenHelper {
         return getCursor(
                 "SELECT "+BUS_ALARM+" FROM "+BUS_TABLE+
                         " WHERE ("+BUS_NUMBER+" = \""+bus.getNumber()+"\""+
-                        " AND "+BUS_RID+" = \""+bus.getRid()+"\""+
-                        " AND "+BUS_DIRECT_PARAM+" = \""+bus.getDirectParam()+"\""+
+//                        " AND "+BUS_RID+" = \""+bus.getRid()+"\""+
+//                        " AND "+BUS_DIRECT_PARAM+" = \""+bus.getDirectParam()+"\""+
                         " AND "+BUS_DIRECT_TEXT+" = \""+bus.getDirectText()+"\""+
                         " AND "+BUS_ONBUS+" = \""+bus.getOnBus()+"\")");
     }

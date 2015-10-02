@@ -35,7 +35,6 @@ public class ParseBusAsyncTask extends AsyncTask<Map<String, Object>, Void, Stri
 
     @Override
     protected void onPostExecute(String s) {
-        Log.i("AmyBus", "onPostExecute");
         super.onPostExecute(s);
         if(s != null && !"".equals(s)) {
             Intent intent = new Intent(WidgetService.CompleteReceiver.PARSE_COMPLETE);

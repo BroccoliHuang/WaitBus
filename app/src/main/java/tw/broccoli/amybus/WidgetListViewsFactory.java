@@ -48,6 +48,10 @@ public class WidgetListViewsFactory implements RemoteViewsService.RemoteViewsFac
         list_text.add(tempMap);
     }
 
+    public static List<Map<String, String>> getListText(){
+        return list_text;
+    }
+
     public static void cleanText(){
         list_text = new ArrayList();
     }
@@ -75,7 +79,7 @@ public class WidgetListViewsFactory implements RemoteViewsService.RemoteViewsFac
         i.putExtras(extras);
         row.setOnClickFillInIntent(R.id.textview_widget_list_row, i);
 
-        return(row);
+        return row;
     }
 
 

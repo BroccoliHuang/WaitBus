@@ -2,6 +2,7 @@ package tw.broccoli.amybus;
 
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
@@ -10,6 +11,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.InputType;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.Gravity;
@@ -19,7 +21,9 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageView;
+import android.widget.Toast;
 
+import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import org.jsoup.Jsoup;
@@ -29,6 +33,8 @@ import org.solovyev.android.views.llm.DividerItemDecoration;
 import org.solovyev.android.views.llm.LinearLayoutManager;
 
 import java.io.IOException;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +53,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     private RecyclerViewAdapter mRecyclerViewAdapter = null;
     private ImageView mImageviewAdd = null;
     private ImageView mImageViewHanging = null;
+    private MaterialDialog mMaterialDialogProgress = null;
 
     private List<Bus> mListBus = null;
     private Bus mAddBus = null;
@@ -183,7 +190,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
 
                 for(Element element_bus : element_allbus.select("li")){
                     String href = element_bus.child(0).attr("href");
-                    list.add(new String[]{element_bus.text(), href.substring(href.indexOf("rid=") + 4, href.indexOf("&sec="))});
+                    list.add(new String[]{element_bus.text(), href.substring(href.indexOf("../") + 3, href.indexOf("&sec="))});
                 }
                 return list;
             }catch(IOException ioe){
@@ -193,6 +200,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
 
         @Override
         protected void onPostExecute(final List<String[]> list) {
+            showProgressDialog(false);
             if(list==null) return;
             super.onPostExecute(list);
 
@@ -219,6 +227,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
 
         @Override
         protected void onPreExecute() {
+            showProgressDialog(true);
             super.onPreExecute();
         }
     }
@@ -230,7 +239,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
                 Map<String, List<String[]>> map = new HashMap();
                 List<String[]> list = new ArrayList();
 
-                Document doc = Jsoup.connect("http://e-bus.tpc.gov.tw/NTPCRoute/Tw/Map?rid=" + mAddBus.getRid() + "&sec=0").get();
+                Log.i("AmyBus", "http://e-bus.tpc.gov.tw/" + mAddBus.getRid() + "&sec=0");
+                Document doc = Jsoup.connect("http://e-bus.tpc.gov.tw/" + mAddBus.getRid() + "&sec=0").get();
 
                 Element direct = doc.getElementsByClass("route_view_wrapper").first().child(0).child(0).child(0);
 
@@ -248,6 +258,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
 
         @Override
         protected void onPostExecute(final Map<String, List<String[]>> map) {
+            showProgressDialog(false);
             if(map==null) return;
             super.onPostExecute(map);
 
@@ -277,6 +288,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
 
         @Override
         protected void onPreExecute() {
+            showProgressDialog(true);
             super.onPreExecute();
         }
     }
@@ -293,7 +305,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
             }
         });
 
-        wb.loadUrl("http://e-bus.tpc.gov.tw/NTPCRoute/Tw/Map?rid=" + bus.getRid() + "&sec=" + bus.getDirectParam());
+        wb.loadUrl("http://e-bus.tpc.gov.tw/" + bus.getRid() + "&sec=" + bus.getDirectParam());
     }
 
     private class MyJavaScriptInterface {
@@ -319,6 +331,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
 
         @Override
         protected void onPostExecute(String[] stringArray) {
+            showProgressDialog(false);
             if(stringArray==null) return;
             super.onPostExecute(stringArray);
 
@@ -329,36 +342,59 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
                     .itemsCallback(new MaterialDialog.ListCallback() {
                         @Override
                         public void onSelection(MaterialDialog dialog, View view, int which, CharSequence text) {
-                            mAddBus.setOnBus(text.toString());
-                            insertBus(mAddBus);
+                            if(text.toString().contains("(") || text.toString().contains(")")){
+                                Toast.makeText(MainActivity.this, "目前不支援有包含括弧的站名", Toast.LENGTH_LONG).show();
+                            }else{
+                                mAddBus.setOnBus(text.toString());
+                                insertBus(mAddBus);
+                                dialog.dismiss();
+                            }
                         }
                     })
                     .negativeText("取消")
                     .negativeColorRes(android.R.color.black)
+                    .autoDismiss(false)
                     .show();
         }
 
         @Override
         protected void onPreExecute() {
+            showProgressDialog(true);
             super.onPreExecute();
         }
     }
 
+    String materialDialogHowLong_minute = null;
     @Override
     public void onAlarm(final int position) {
-        String[] items = new String[62];
-        items[0] = "已到站";
-        items[1] = "將到站";
-        for(int temp = 2 ; temp<=61 ; temp++){
-            items[temp] = String.valueOf(temp-1);
-        }
-        new MaterialDialog.Builder(MainActivity.this)
+        MaterialDialog materialDialogHowLong = new MaterialDialog.Builder(MainActivity.this)
                 .typeface("erh_feng.ttc", "erh_feng.ttc")
-                .title("幾分鐘內到站要提醒妳呢?")
-                .items(items)
-                .itemsCallback(new MaterialDialog.ListCallback() {
+                .title("轉鬧鐘囉")
+                .content("幾分鐘內到站要提醒妳呢?")
+                .inputType(InputType.TYPE_CLASS_NUMBER)
+                .alwaysCallInputCallback() // this forces the callback to be invoked with every input change
+                .input(R.string.dialog_abundant, 0, false, new MaterialDialog.InputCallback() {
                     @Override
-                    public void onSelection(MaterialDialog dialog, View view, int which, final CharSequence minute) {
+                    public void onInput(MaterialDialog dialog, CharSequence input) {
+                        NumberFormat formatter = NumberFormat.getInstance();
+                        ParsePosition pos = new ParsePosition(0);
+                        formatter.parse(input.toString(), pos);
+                        if(input.length() == pos.getIndex()){
+                            dialog.setContent("幾分鐘內到站要提醒妳呢?");
+                            dialog.getActionButton(DialogAction.POSITIVE).setEnabled(true);
+                        }else{
+                            dialog.setContent("只能輸入數字");
+                            dialog.getActionButton(DialogAction.POSITIVE).setEnabled(false);
+                        }
+                    }
+                })
+                .callback(new MaterialDialog.ButtonCallback() {
+                    @Override
+                    public void onPositive(MaterialDialog dialog) {
+                        super.onPositive(dialog);
+
+                        materialDialogHowLong_minute = dialog.getInputEditText().getText().toString();
+
                         Integer[] defaultChoice = new Integer[]{};
                         Alarm tempAlarm = BusDBHelper.getAlarm(mListBus.get(position));
                         if (tempAlarm != null) {
@@ -389,9 +425,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
                                             string_ring_and_vibrate += dialog.getSelectedIndices()[temp];
                                         }
 
-
                                         Bus bus_update = BusDBHelper.getAllStop().get(position);
-                                        bus_update.setAlarm(new Alarm(minute.toString(), (string_ring_and_vibrate.contains("0") ? "default" : ""), (string_ring_and_vibrate.contains("1") ? true : false)));
+                                        bus_update.setAlarm(new Alarm(materialDialogHowLong_minute, (string_ring_and_vibrate.contains("0") ? "default" : ""), (string_ring_and_vibrate.contains("1") ? true : false)));
                                         BusDBHelper.requestUpdateAlarm(bus_update);
 
                                         mRecyclerViewAdapter.notifyDataSetChanged();
@@ -414,8 +449,25 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
                                 .show();
                     }
                 })
+                .positiveText("確定")
                 .negativeText("取消")
+                .positiveColorRes(android.R.color.black)
                 .negativeColorRes(android.R.color.black)
                 .show();
+        materialDialogHowLong.getActionButton(DialogAction.POSITIVE).setEnabled(false);
+    }
+
+    private void showProgressDialog(boolean show) {
+        if(show){
+            if(mMaterialDialogProgress == null){
+                mMaterialDialogProgress = new MaterialDialog.Builder(MainActivity.this)
+                        .title("等我一下")
+                        .customView(R.layout.dialog_progress, true)
+                        .build();
+            }
+            mMaterialDialogProgress.show();
+        }else{
+            mMaterialDialogProgress.dismiss();
+        }
     }
 }
