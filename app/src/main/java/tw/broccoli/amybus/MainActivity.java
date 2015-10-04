@@ -41,6 +41,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import pl.droidsonroids.gif.GifDrawable;
+import pl.droidsonroids.gif.GifImageView;
+
 public class MainActivity extends AppCompatActivity implements RecyclerViewAdapter.Callback{
     private final static String BUS_DIRECT_PARAM_AND_TEXT = "bus_direct_param_and_text";
 
@@ -468,6 +471,19 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
             mMaterialDialogProgress.show();
         }else{
             mMaterialDialogProgress.dismiss();
+        }
+
+        try {
+            GifImageView gifImageView = (GifImageView) mMaterialDialogProgress.getCustomView().findViewById(R.id.dialog_progress_gifImageView);
+            GifDrawable gifDrawable = new GifDrawable(getResources(), R.mipmap.progress);
+            gifImageView.setImageDrawable(gifDrawable);
+            if(show){
+                gifDrawable.start();
+            }else {
+                gifDrawable.stop();
+            }
+        }catch(IOException ioe){
+
         }
     }
 }
