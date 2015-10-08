@@ -14,7 +14,7 @@
         android:paddingRight="264dp"
         app:svg="@raw/a"
         app:pathColor="@android:color/black"
-        app:pathWidth="8"/>
+        app:pathWidth="3"/>
 
     <com.eftimoff.androipathview.PathView
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -25,7 +25,7 @@
         android:paddingRight="262dp"
         app:svg="@raw/m"
         app:pathColor="@android:color/black"
-        app:pathWidth="8"/>
+        app:pathWidth="2"/>
 
     <com.eftimoff.androipathview.PathView
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -36,17 +36,20 @@
         android:paddingRight="151dp"
         app:svg="@raw/y"
         app:pathColor="@android:color/black"
-        app:pathWidth="8"/>
+        app:pathWidth="2"/>
 
+    <!--Samsung S6-->
+    <!--android:paddingBottom="135dp"-->
+    <!--hTC Desire 610-->
     <com.eftimoff.androipathview.PathView
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/pathView_umbrella"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="135dp"
+        android:paddingBottom="125dp"
         app:svg="@raw/umbrella"
         app:pathColor="@android:color/black"
-        app:pathWidth="8"/>
+        app:pathWidth="3"/>
 
     <com.eftimoff.androipathview.PathView
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -57,7 +60,7 @@
         android:paddingLeft="55dp"
         app:svg="@raw/b"
         app:pathColor="@android:color/black"
-        app:pathWidth="8"/>
+        app:pathWidth="3"/>
 
     <com.eftimoff.androipathview.PathView
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -68,7 +71,7 @@
         android:paddingLeft="70dp"
         app:svg="@raw/u"
         app:pathColor="@android:color/black"
-        app:pathWidth="8"/>
+        app:pathWidth="2"/>
 
     <com.eftimoff.androipathview.PathView
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -79,7 +82,7 @@
         android:paddingLeft="146dp"
         app:svg="@raw/s"
         app:pathColor="@android:color/black"
-        app:pathWidth="8"/>
+        app:pathWidth="2"/>
 
     <TextView android:id="@+id/textview_a_dot"
         android:layout_width="wrap_content"
@@ -94,5 +97,10 @@
         android:textSize="62sp"
         android:text="."
         android:visibility="invisible"/>
+
+    <pl.droidsonroids.gif.GifImageView android:id="@+id/gifImageView_plugin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"/>
 
 </RelativeLayout>

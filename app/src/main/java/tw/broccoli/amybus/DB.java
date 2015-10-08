@@ -25,6 +25,7 @@ public class DB extends SQLiteOpenHelper {
     /**setting資料表*/
     public final static String SETTING_TABLE = "setting";
     public final static String SETTING_ID = "_id";
+    public final static String SETTING_TITLE_BACKGROUND = "setting_title_background";
 
 
     public DB(Context context){
@@ -42,7 +43,8 @@ public class DB extends SQLiteOpenHelper {
                 BUS_ONBUS + " TEXT," +
                 BUS_ALARM + " TEXT)");
         db.execSQL("CREATE TABLE " + SETTING_TABLE + " (" +
-                SETTING_ID + " INTEGER primary key autoincrement)");
+                SETTING_ID + " INTEGER primary key autoincrement, " +
+                SETTING_TITLE_BACKGROUND + " TEXT)");
     }
 
     @Override
@@ -130,6 +132,7 @@ public class DB extends SQLiteOpenHelper {
                 values,
                 BUS_NUMBER + "=? AND " + BUS_RID + "=? AND " + BUS_DIRECT_PARAM + "=? AND " + BUS_DIRECT_TEXT + "=? AND " + BUS_ONBUS + "=?",
                 new String[]{bus.getNumber(), bus.getRid(), bus.getDirectParam(), bus.getDirectText(), bus.getOnBus()});
+        db.close();
     }
 
     void deleteBus(Bus bus) {
@@ -154,5 +157,36 @@ public class DB extends SQLiteOpenHelper {
 //                        " AND "+BUS_DIRECT_PARAM+" = \""+bus.getDirectParam()+"\""+
                         " AND "+BUS_DIRECT_TEXT+" = \""+bus.getDirectText()+"\""+
                         " AND "+BUS_ONBUS+" = \""+bus.getOnBus()+"\")");
+    }
+
+    Cursor getTitleBackground(){
+        return getCursor(
+                "SELECT " + SETTING_TITLE_BACKGROUND + " FROM " + SETTING_TABLE +
+                        " WHERE (" + SETTING_ID + " = \"" + 1 + "\")");
+
+    }
+
+    void updateTitleBackground(int index){
+        ContentValues values = new ContentValues();
+
+        values.put(SETTING_TITLE_BACKGROUND, (index + 1) % 3);
+
+        Cursor cursor = getCursor("SELECT "+SETTING_TITLE_BACKGROUND+" FROM "+SETTING_TABLE+
+                " WHERE ("+SETTING_ID+" = \""+1+"\")");
+
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        if(cursor.getCount()>0){
+            db.update(SETTING_TABLE,
+                    values,
+                    SETTING_ID + "=?",
+                    new String[]{"1"});
+            cursor.close();
+        }else{
+            db.insert(SETTING_TABLE, null, values);
+            cursor.close();
+        }
+
+        db.close();
     }
 }

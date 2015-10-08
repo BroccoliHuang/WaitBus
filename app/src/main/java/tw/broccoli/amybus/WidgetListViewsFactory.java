@@ -22,7 +22,7 @@ public class WidgetListViewsFactory implements RemoteViewsService.RemoteViewsFac
 
     private Context mContext = null;
     private int appWidgetId;
-    private static List<Map<String, String>> list_text = new ArrayList();
+    private List<Map<String, String>> list_text = new ArrayList();
 
 
     public WidgetListViewsFactory(Context context, Intent intent) {
@@ -30,15 +30,18 @@ public class WidgetListViewsFactory implements RemoteViewsService.RemoteViewsFac
         appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
     }
 
-    public static void addText(String text){
+    public void addText(String text){
         if(list_text == null){
             list_text = new ArrayList();
             return;
         }
 
+        Bus bus = Bus.getBus(text);
+        if(bus == null)return;
+
         Map tempMap = new HashMap();
         tempMap.put(KEY_TEXT, text);
-        Alarm tempAlarm = BusDBHelper.getAlarm(WidgetService.getBus(0));
+        Alarm tempAlarm = BusDBHelper.getAlarm(bus);
 
         if(tempAlarm==null||("".equals(tempAlarm.getRing()) && !tempAlarm.getVibrate())){
             tempMap.put(KEY_COLOR, String.valueOf(android.R.color.black));
@@ -48,11 +51,24 @@ public class WidgetListViewsFactory implements RemoteViewsService.RemoteViewsFac
         list_text.add(tempMap);
     }
 
-    public static List<Map<String, String>> getListText(){
+    public List<Map<String, String>> getListText(){
         return list_text;
     }
 
-    public static void cleanText(){
+    public void setTextColor(String text, int color){
+        for(int temp=0;temp<list_text.size();temp++){
+            if(text.equals(list_text.get(temp).get(KEY_TEXT))){
+                list_text.get(temp).put(KEY_COLOR, String.valueOf(color));
+                break;
+            }
+        }
+    }
+
+    public int getTextColor(int index){
+        return Integer.valueOf(list_text.get(index).get(KEY_COLOR));
+    }
+
+    public void cleanText(){
         list_text = new ArrayList();
     }
 
@@ -74,7 +90,8 @@ public class WidgetListViewsFactory implements RemoteViewsService.RemoteViewsFac
         }
 
         Bundle extras = new Bundle();
-        extras.putInt(MyWidgetProvider.WIDGET_ITEM, position);
+        extras.putInt(MyWidgetProvider.WIDGET_ITEM_INDEX, position);
+        extras.putString(MyWidgetProvider.WIDGET_ITEM_TEXT, list_text.get(position).get(KEY_TEXT));
         Intent i = new Intent();
         i.putExtras(extras);
         row.setOnClickFillInIntent(R.id.textview_widget_list_row, i);

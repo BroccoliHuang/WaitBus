@@ -5,4 +5,6 @@
     <color name="colorPrimaryDark">#DFCB1B</color>
     <color name="colorAccent">#FFEB3B</color>
     <color name="red">#FF0000</color>
+    <color name="widget_background">#FDE63D</color>
+    <!--<color name="widget_background">#FDE73F</color>-->
 </resources>

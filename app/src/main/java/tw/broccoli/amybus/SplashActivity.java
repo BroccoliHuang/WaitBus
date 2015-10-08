@@ -14,6 +14,12 @@ import android.widget.TextView;
 
 import com.eftimoff.androipathview.PathView;
 
+import java.io.IOException;
+
+import pl.droidsonroids.gif.AnimationListener;
+import pl.droidsonroids.gif.GifDrawable;
+import pl.droidsonroids.gif.GifImageView;
+
 /**
  * Created by Broccoli on 2015/9/27.
  */
@@ -24,6 +30,7 @@ public class SplashActivity extends Activity{
     private int hasUmbrellaCount = 0;
 
     private int animateCount = 0;
+    private GifImageView mGifImageViewPlugin = null;
     private PathView mPathViewA = null;
     private PathView mPathViewM = null;
     private PathView mPathViewY = null;
@@ -31,9 +38,12 @@ public class SplashActivity extends Activity{
     private PathView mPathViewU = null;
     private PathView mPathViewS = null;
     private PathView mPathViewUmbrella = null;
-
     private TextView mTextViewADot = null;
     private TextView mTextViewBDot = null;
+
+    private GifDrawable mGifDrawableA = null;
+    private GifDrawable mGifDrawableB = null;
+    private GifDrawable mGifDrawableC = null;
 
 
     @Override
@@ -46,6 +56,7 @@ public class SplashActivity extends Activity{
             startActivity(new Intent(SplashActivity.this, MainActivity.class));
             finish();
         }else {
+            mGifImageViewPlugin = (GifImageView) findViewById(R.id.gifImageView_plugin);
             mPathViewA = (PathView) findViewById(R.id.pathView_a);
             mPathViewM = (PathView) findViewById(R.id.pathView_m);
             mPathViewY = (PathView) findViewById(R.id.pathView_y);
@@ -64,12 +75,38 @@ public class SplashActivity extends Activity{
                 }
             });
 
-            goSVG(mPathViewA);
-            goSVG(mPathViewM);
-            goSVG(mPathViewY);
-            goSVG(mPathViewB);
-            goSVG(mPathViewU);
-            goSVG(mPathViewS);
+
+            try {
+                mGifDrawableA = new GifDrawable(getResources(), R.mipmap.plugin_a);
+                mGifImageViewPlugin.setImageDrawable(mGifDrawableA);
+                mGifDrawableA.addAnimationListener(new AnimationListener() {
+                    @Override
+                    public void onAnimationCompleted() {
+                        mGifDrawableA.stop();
+                        try {
+                            mGifDrawableB = new GifDrawable(getResources(), R.mipmap.plugin_b);
+                            mGifImageViewPlugin.setImageDrawable(mGifDrawableB);
+                            mGifDrawableB.addAnimationListener(new AnimationListener() {
+                                @Override
+                                public void onAnimationCompleted() {
+                                    mGifDrawableB.stop();
+                                }
+                            });
+                            mGifDrawableB.start();
+
+                            goSVG(mPathViewA);
+                            goSVG(mPathViewM);
+                            goSVG(mPathViewY);
+                            goSVG(mPathViewB);
+                            goSVG(mPathViewU);
+                            goSVG(mPathViewS);
+                        }catch(IOException ioe){
+                        }
+                    }
+                });
+                mGifDrawableA.start();
+            }catch(IOException ioe){
+            }
         }
     }
 
@@ -104,8 +141,12 @@ public class SplashActivity extends Activity{
                                         .listenerEnd(new PathView.AnimatorBuilder.ListenerEnd() {
                                             @Override
                                             public void onAnimationEnd() {
-                                                Animation translateAnimation_A = new TranslateAnimation(mPathViewA.getScaleX(), mPathViewA.getScaleX()+200, mPathViewA.getScaleY(), mPathViewA.getScaleY());
-                                                Animation translateAnimation_B = new TranslateAnimation(mPathViewB.getScaleX(), mPathViewB.getScaleX()+70, mPathViewB.getScaleY(), mPathViewB.getScaleY());
+                                                //Samsung S6
+//                                                Animation translateAnimation_A = new TranslateAnimation(mPathViewA.getScaleX(), mPathViewA.getScaleX()+200, mPathViewA.getScaleY(), mPathViewA.getScaleY());
+//                                                Animation translateAnimation_B = new TranslateAnimation(mPathViewB.getScaleX(), mPathViewB.getScaleX()+70, mPathViewB.getScaleY(), mPathViewB.getScaleY());
+                                                //hTC Desire 610
+                                                Animation translateAnimation_A = new TranslateAnimation(mPathViewA.getScaleX(), mPathViewA.getScaleX()+75, mPathViewA.getScaleY(), mPathViewA.getScaleY());
+                                                Animation translateAnimation_B = new TranslateAnimation(mPathViewB.getScaleX(), mPathViewB.getScaleX()+27, mPathViewB.getScaleY(), mPathViewB.getScaleY());
                                                 translateAnimation_A.setDuration(500);
                                                 translateAnimation_B.setDuration(500);
                                                 translateAnimation_A.setFillAfter(true);
@@ -116,11 +157,19 @@ public class SplashActivity extends Activity{
                                                         Animation alphaAnimation = new AlphaAnimation(0f, 1f);
                                                         alphaAnimation.setDuration(500);
                                                         alphaAnimation.setFillAfter(true);
-                                                        mTextViewADot.setX(510);
-                                                        mTextViewADot.setY(1070);
+                                                        //Samsung S6
+//                                                        mTextViewADot.setX(510);
+//                                                        mTextViewADot.setY(1070);
+                                                        //hTC Desire 610
+                                                        mTextViewADot.setX(192);
+                                                        mTextViewADot.setY(365);
                                                         mTextViewADot.setVisibility(View.VISIBLE);
-                                                        mTextViewBDot.setX(1010);
-                                                        mTextViewBDot.setY(1070);
+                                                        //Samsung S6
+//                                                        mTextViewBDot.setX(1010);
+//                                                        mTextViewBDot.setY(1070);
+                                                        //hTC Desire 610
+                                                        mTextViewBDot.setX(379);
+                                                        mTextViewBDot.setY(365);
                                                         mTextViewBDot.setVisibility(View.VISIBLE);
                                                         mTextViewADot.setAnimation(alphaAnimation);
                                                         mTextViewBDot.setAnimation(alphaAnimation);
@@ -128,7 +177,7 @@ public class SplashActivity extends Activity{
 
                                                     @Override
                                                     public void onAnimationEnd(Animation animation) {
-                                                        startMainActivity();
+                                                        PluginC();
                                                     }
 
                                                     @Override
@@ -142,13 +191,29 @@ public class SplashActivity extends Activity{
                                         .interpolator(new AccelerateDecelerateInterpolator())
                                         .start();
                             } else {
-                                startMainActivity();
+                                PluginC();
                             }
                         }
                     }
                 })
                 .interpolator(new AccelerateDecelerateInterpolator())
                 .start();
+    }
+
+    private void PluginC(){
+        try {
+            mGifDrawableC = new GifDrawable(getResources(), R.mipmap.plugin_c);
+            mGifImageViewPlugin.setImageDrawable(mGifDrawableC);
+            mGifDrawableC.addAnimationListener(new AnimationListener() {
+                @Override
+                public void onAnimationCompleted() {
+                    mGifDrawableC.stop();
+                    startMainActivity();
+                }
+            });
+            mGifDrawableC.start();
+        }catch(IOException ioe){
+        }
     }
 
     private void startMainActivity(){
@@ -161,7 +226,7 @@ public class SplashActivity extends Activity{
                         finish();
                     }
                 },
-                800
+                400
         );
     }
 }

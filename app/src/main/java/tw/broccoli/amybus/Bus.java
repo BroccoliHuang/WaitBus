@@ -80,4 +80,12 @@ public class Bus {
     public Alarm getAlarm() {
         return bus_alarm;
     }
+
+    public static Bus getBus(String widgetListText){
+        String bus = widgetListText.substring(0, widgetListText.indexOf(" - "));
+        String direct_text = widgetListText.substring(widgetListText.indexOf("往 "), widgetListText.indexOf(" ", widgetListText.indexOf("往 ") + 2));
+//        String time = widgetListText.substring(widgetListText.lastIndexOf(" ", widgetListText.indexOf(" 到 ") - 1) + 1, widgetListText.indexOf(" 到 "));
+        String onbus = widgetListText.substring(widgetListText.indexOf(" 到 ")+3);
+        return new Bus(bus, "", "", direct_text, onbus, "");
+    }
 }

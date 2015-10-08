@@ -9,19 +9,19 @@ import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Vibrator;
-import android.text.Html;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.RemoteViewsService;
-import android.widget.TextView;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 
@@ -35,19 +35,34 @@ import java.util.Map;
 @SuppressLint("SetJavaScriptEnabled")
 public class WidgetService extends RemoteViewsService {
 
-    private WidgetListViewsFactory mWidgetListViewsFactory = null;
+    private static WidgetListViewsFactory mWidgetListViewsFactory = null;
     private static RemoteViewsService me = null;
-    private static Callback mCallback = null;
+    private static NotificationManager mNotificationManager = null;
     private static Handler handler = new Handler();
     private static boolean isRunning = false;
+    private static boolean isNeedInitialByClickWidgetBoard = false;
+    private static boolean isAlarming = false;
     private static List<Bus> mListBus = null;
+    private static int mQueueCount = -1;
     private static MyJavaScriptInterface mMyJavaScriptInterface = null;
     private static Vibrator mVibrator = null;
+    private static Ringtone mRingtone = null;
+
+    public enum RefreshBus{
+        INITIAL,
+        AFTER_FIRST,
+        JUST_REFRESH
+    }
+    public enum AlarmState{
+        ON,
+        OFF,
+        TOGGLE
+    }
 
     @Override
     public RemoteViewsFactory onGetViewFactory(Intent intent) {
         Log.i("AmyBus", "WidgetService onGetViewFactory");
-        mWidgetListViewsFactory = new WidgetListViewsFactory(this.getApplicationContext(), intent);
+        mWidgetListViewsFactory = new WidgetListViewsFactory(WidgetService.this, intent);
         return mWidgetListViewsFactory;
     }
 
@@ -55,114 +70,198 @@ public class WidgetService extends RemoteViewsService {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i("AmyBus", "WidgetService onStartCommand");
         if(isRunning) {
-            if(mCallback != null) mCallback.onStartCommand();
-            return 0;
+            Log.i("AmyBus", "isRunning");
+            check();
+            return -1;
         }else{
+            Log.i("AmyBus", "is not Running");
             me = this;
             mMyJavaScriptInterface = new MyJavaScriptInterface();
+            isNeedInitialByClickWidgetBoard = true;
             showTime.run();
+            int returnValue = super.onStartCommand(intent, flags, startId);
+            return returnValue;
         }
-        int returnValue = super.onStartCommand(intent, flags, startId);
-        if(mCallback != null) mCallback.onStartCommand();
-        return returnValue;
-    }
-
-    public static void setCallback(Callback callback){
-        mCallback = callback;
     }
 
     private static Runnable showTime = new Runnable() {
         public void run() {
             Log.i("AmyBus", "WidgetService showTime");
             isRunning = true;
-            refreshBus(true);
+
+            boolean isInitial = false;
+            List<Map<String, String>> list_text = null;
+
+            if(mWidgetListViewsFactory != null) {
+                list_text = mWidgetListViewsFactory.getListText();
+                for (Map<String, String> listItem : list_text) {
+                    if (String.valueOf(R.color.red).equals(listItem.get(WidgetListViewsFactory.KEY_COLOR))) {
+                        isInitial = true;
+                        break;
+                    }
+                }
+            }
+            if(isInitial || list_text==null || list_text.size()==0 || isNeedInitialByClickWidgetBoard){
+                isNeedInitialByClickWidgetBoard = false;
+                refreshBus(RefreshBus.INITIAL);
+            }else{
+                refreshBus(RefreshBus.JUST_REFRESH);
+            }
         }
     };
 
     private static void check(){
-        List<Map<String, String>> list_text = WidgetListViewsFactory.getListText();
+        Log.i("AmyBus", "check");
+        boolean isNeedStopService = true;
+        if(mWidgetListViewsFactory==null) return;
+        List<Map<String, String>> list_text = mWidgetListViewsFactory.getListText();
         for(Map<String, String> listItem : list_text){
             if(String.valueOf(R.color.red).equals(listItem.get(WidgetListViewsFactory.KEY_COLOR))){
+                isNeedStopService = false;
                 String text = listItem.get(WidgetListViewsFactory.KEY_TEXT);
-                String bus = text.substring(0, text.indexOf(" - "));
-                String direct_text = text.substring(text.indexOf("往 "), text.indexOf(" ", text.indexOf("往 ") + 2));
+
                 String time = text.substring(text.lastIndexOf(" ", text.indexOf(" 到 ") - 1) + 1, text.indexOf(" 到 "));
-                String onbus = text.substring(text.indexOf(" 到 ")+3);
+                Bus bus = Bus.getBus(text);
 
-//                Log.i("AmyBus", "bus="+bus+"=");
-//                Log.i("AmyBus", "direct_text="+direct_text+"=");
-//                Log.i("AmyBus", "time="+time+"=");
-//                Log.i("AmyBus", "onbus="+onbus+"=");
-
-//                if(time.contains("約") && time.contains("分")){
-                if(time.contains("約") && time.contains("分")){
-                    Alarm alarm = BusDBHelper.getAlarm(new Bus(bus, "", "", direct_text, onbus, ""));
-
-                    if(alarm != null){
+                Alarm alarm = BusDBHelper.getAlarm(bus);
+                if(alarm != null){
+                    if(time.contains("約") && time.contains("分")){
                         if(Integer.valueOf(time.replace("約", "").replace("分", ""))<=Integer.valueOf(alarm.getMinute())){
                             Log.i("AmyBus", "約＝"+Integer.valueOf(time.replace("約", "").replace("分", "")));
                             Log.i("AmyBus", "getMinute＝" + Integer.valueOf(alarm.getMinute()));
 
-                            alarm(true);
+                            alarm(text, bus.getNumber() + " - " + bus.getDirectText(), time + " 到 " + bus.getOnBus(), alarm, true);
+                        }else{
+                            handler.postDelayed(showTime, 20000);
                         }
+                    }else if(time.contains("未發車")){
+                        handler.postDelayed(showTime, 60000);
+                    }else if(time.contains("將到站")){
+                        alarm(text, bus.getNumber() + " - " + bus.getDirectText(), time + " 到 " + bus.getOnBus(), alarm, true);
+    //                    handler.postDelayed(showTime, 5000);
+                    }else if(time.contains("-")){//已到站
+                        alarm(text, bus.getNumber() + " - " + bus.getDirectText(), time + " 到 " + bus.getOnBus(), alarm, true);
+    //                    handler.postDelayed(showTime, 5000);
+                    }else if(time.contains("已過")){//末班車 已過
+                        setWidgetListTextColor(text, android.R.color.black);
+                        MaterialDialog md = new MaterialDialog.Builder(Common.getAppContext())
+                                .title("末班車已過")
+                                .content("快點叫計程車！要注意安全喔！")
+                                .positiveText("關閉")
+                                .callback(new MaterialDialog.ButtonCallback() {
+                                    @Override
+                                    public void onPositive(MaterialDialog dialog) {
+                                        check();
+                                    }
+                                })
+                                .build();
+                        md.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);//設定提示框為系統提示框
+                        md.show();
                     }
-                }else if(time.contains("未發車")){
-                    handler.postDelayed(showTime, 5000);
-                }else if(time.contains("將到站")){
-                    handler.postDelayed(showTime, 5000);
-                }else if(time.contains("-")){
-                    //已到站
-                    handler.postDelayed(showTime, 5000);
-                }else if(time.contains("已過")){
-                    //末班車 已過
-                    Log.i("AmyBus", "末班車 已過");
-                    alarm(true);
                 }
+            }
+        }
+        if(isNeedStopService) me.stopSelf();
+    }
 
+    private static void setWidgetListTextColor(String text, int color){
+        if(mWidgetListViewsFactory!=null) mWidgetListViewsFactory.setTextColor(text, color);
+        refreshBus(RefreshBus.JUST_REFRESH);
+    }
+
+    public static void setAlarmable(String text, AlarmState alarmState){
+        if(mWidgetListViewsFactory==null) return;
+        List<Map<String, String>> list_text = mWidgetListViewsFactory.getListText();
+        for(int temp=0;temp<list_text.size();temp++){
+            if(text.equals(list_text.get(temp).get(WidgetListViewsFactory.KEY_TEXT))){
+                if(alarmState == AlarmState.TOGGLE) {
+                    if (mWidgetListViewsFactory.getTextColor(temp) == android.R.color.black) {
+                        if(BusDBHelper.getAlarm(getBus(temp)) != null) {
+                            setWidgetListTextColor(text, R.color.red);
+                        }
+                    } else if (mWidgetListViewsFactory.getTextColor(temp) == R.color.red) {
+                        setWidgetListTextColor(text, android.R.color.black);
+                    }
+                }
             }
         }
     }
 
-    private static void alarm(boolean start){
-        if(mVibrator == null) mVibrator = (Vibrator)Common.getAppContext().getSystemService(Service.VIBRATOR_SERVICE);
-        if(start){
-            intentCancelNotifiaction();
-            mVibrator.vibrate(new long[]{520, 520}, 0);
+    public static boolean isRunning(){
+        return isRunning;
+    }
 
+    private static void alarm(@Nullable String originalText, @Nullable String title, @Nullable String content, @Nullable Alarm alarm, boolean start){
+        isAlarming = start;
+        if(start){
+            //set textcolor to black
+            setWidgetListTextColor(originalText, android.R.color.black);
+
+            //Notification
+            intentCancelNotifiaction(title, content);
+
+            //Vibrate
+            if(alarm.getVibrate()) {
+                if(mVibrator == null) mVibrator = (Vibrator) Common.getAppContext().getSystemService(Service.VIBRATOR_SERVICE);
+                mVibrator.vibrate(new long[]{520, 520}, 0);
+            }
+
+            //Ring
+            if("default".equals(alarm.getRing())){
+                if(mRingtone == null) mRingtone = RingtoneManager.getRingtone(Common.getAppContext(), RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM));
+                mRingtone.play();
+            }else if(!"".equals(alarm.getRing())){
+                //TODO custom ring
+            }
             MaterialDialog md = new MaterialDialog.Builder(Common.getAppContext())
-                    .title("title")
-                    .content("content")
+                    .title(title)
+                    .content(content)
+                    .positiveText("關閉")
+                    .callback(new MaterialDialog.ButtonCallback() {
+                        @Override
+                        public void onPositive(MaterialDialog dialog) {
+                            alarm(null, null, null, null, false);
+                            check();
+                            super.onPositive(dialog);
+                        }
+                    })
                     .build();
             md.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);//設定提示框為系統提示框
             md.show();
         }else{
-            mVibrator.cancel();
+            if(mNotificationManager!=null) mNotificationManager.cancelAll();
+            if(mVibrator != null) mVibrator.cancel();
+            if(mRingtone != null) mRingtone.stop();
         }
     }
 
-    public static void refreshBus(boolean initial){
-        Log.i("AmyBus", "refreshBus");
+    public static void refreshBus(RefreshBus refreshBus){
         AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(Common.getAppContext());
         ComponentName thisAppWidget = new ComponentName(Common.getAppContext().getPackageName(), MyWidgetProvider.class.getName());
         int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisAppWidget);
 
         //這行也要先刷新，因為呼叫這支函式的人需要
         appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.listview_widget);
-
-        if(initial) {
-            WidgetListViewsFactory.cleanText();
+        if(refreshBus == RefreshBus.JUST_REFRESH){
+            Log.i("AmyBus", "refreshBus JUST_REFRESH");
+            if(!isAlarming) check();
+            return;
+        }else if(refreshBus == RefreshBus.INITIAL) {
+            Log.i("AmyBus", "refreshBus INITIAL");
+            if(mWidgetListViewsFactory!=null) mWidgetListViewsFactory.cleanText();
 
             appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.listview_widget);
 
             WidgetService.setListBus(BusDBHelper.getAllStop());
-        }else{
-            WidgetService.removeListBus(0);
+        }else if(refreshBus == RefreshBus.AFTER_FIRST){
+            Log.i("AmyBus", "refreshBus AFTER_FIRST");
+            mQueueCount++;
         }
 
-        if(WidgetService.isListBusEmpty()) {
+        if(mListBus.size()==mQueueCount) {
             check();
-        }else{
-            showBusTimeOnBoard(WidgetService.getBus(0));
+        }else if(mListBus.size()>mQueueCount) {
+            showBusTimeOnBoard(WidgetService.getBus(mQueueCount));
         }
     }
 
@@ -197,21 +296,18 @@ public class WidgetService extends RemoteViewsService {
 
     public static void setListBus(List<Bus> listBus){
         mListBus = listBus;
-    }
-
-    public static void removeListBus(int position){
-        if(!isListBusEmpty()) mListBus.remove(position);
+        mQueueCount = 0;
     }
 
     public static Bus getBus(int position){
-        if(!isListBusEmpty()) {
+        if(mListBus!=null && mListBus.size()!=0) {
             return mListBus.get(position);
         }else{
             return null;
         }
     }
     public static Bus getBus(String rid){
-        if(!isListBusEmpty()) {
+        if(mListBus!=null && mListBus.size()!=0) {
             for (int temp = 0; temp < mListBus.size(); temp++) {
                 if (mListBus.get(temp).getRid().contains(rid)) return getBus(temp);
             }
@@ -219,11 +315,7 @@ public class WidgetService extends RemoteViewsService {
         return null;
     }
 
-    public static boolean isListBusEmpty(){
-        return (mListBus==null || mListBus.size()==0);
-    }
-
-    private static void intentCancelNotifiaction(){
+    private static void intentCancelNotifiaction(String title, String content){
         Log.i("AmyBus", "WidgetService intentCancelNotifiaction");
 //        final int notifyID = 1; // 通知的識別號碼
 
@@ -237,21 +329,33 @@ public class WidgetService extends RemoteViewsService {
         int flags = PendingIntent.FLAG_ONE_SHOT; // ONE_SHOT：PendingIntent只使用一次；CANCEL_CURRENT：PendingIntent執行前會先結束掉之前的；NO_CREATE：沿用先前的PendingIntent，不建立新的PendingIntent；UPDATE_CURRENT：更新先前PendingIntent所帶的額外資料，並繼續沿用
         final PendingIntent pendingCancelIntent = PendingIntent.getBroadcast(Common.getAppContext(), 0, cancelIntent, flags); // 取得PendingIntent
 
-        final NotificationManager notificationManager = (NotificationManager) Common.getAppContext().getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
+        mNotificationManager = (NotificationManager) Common.getAppContext().getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
         final Notification notification;
         if(Build.VERSION.SDK_INT < 19) {
-            notification = new Notification.Builder(Common.getAppContext()).setSmallIcon(R.mipmap.notification_small_icon).setContentTitle("內容標題").setContentText("內容文字").addAction(android.R.drawable.ic_menu_close_clear_cancel, "關閉通知", pendingCancelIntent).build(); // 建立通知
+            notification = new Notification.Builder(Common.getAppContext())
+                    .setSmallIcon(R.mipmap.notification_small_icon)
+                    .setContentTitle(title)
+                    .setContentText(content)
+                    .addAction(android.R.drawable.ic_menu_close_clear_cancel, "關閉", pendingCancelIntent)
+                    .setOngoing(true)
+                    .build(); // 建立通知
         }else{
-            notification = new Notification.Builder(Common.getAppContext()).setSmallIcon(R.mipmap.notification_small_icon).setContentTitle("內容標題").setContentText("內容文字").addAction(new Notification.Action(android.R.drawable.ic_menu_close_clear_cancel, "關閉通知", pendingCancelIntent)).build(); // 建立通知
+            notification = new Notification.Builder(Common.getAppContext())
+                    .setSmallIcon(R.mipmap.notification_small_icon)
+                    .setContentTitle(title)
+                    .setContentText(content)
+                    .addAction(new Notification.Action(android.R.drawable.ic_menu_close_clear_cancel, "關閉", pendingCancelIntent))
+                    .setOngoing(true)
+                    .build(); // 建立通知
         }
-        notificationManager.notify(NotificationReceiver.NOTIFY_ID, notification); // 發送通知
+        mNotificationManager.notify(NotificationReceiver.NOTIFY_ID, notification); // 發送通知
     }
 
     @Override
     public void onDestroy() {
         Log.i("AmyBus", "WidgetService onDestroy");
         isRunning = false;
-        alarm(false);
+        alarm(null, null, null, null, false);
         handler.removeCallbacksAndMessages(null);
         super.onDestroy();
     }
@@ -265,16 +369,12 @@ public class WidgetService extends RemoteViewsService {
             Log.i("AmyBus", "onReceive");
             if(PARSE_COMPLETE.equals(intent.getAction())){
                 String returnText = intent.getStringExtra(RETURN_TEXT);
-                if(returnText != null && !"".equals(returnText)){
+                if(returnText != null && !"".equals(returnText)) {
                     Log.i("AmyBus", "returnText＝"+returnText);
-                    WidgetListViewsFactory.addText(returnText);
+                    if(mWidgetListViewsFactory!=null) mWidgetListViewsFactory.addText(returnText);
                 }
-                refreshBus(false);
+                refreshBus(RefreshBus.AFTER_FIRST);
             }
         }
-    }
-
-    public interface Callback{
-        RemoteViewsService onStartCommand();
     }
 }

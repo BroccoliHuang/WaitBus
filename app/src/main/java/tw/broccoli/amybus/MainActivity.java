@@ -2,10 +2,8 @@ package tw.broccoli.amybus;
 
 import android.graphics.Color;
 import android.os.AsyncTask;
-import android.support.annotation.NonNull;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
-import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -13,15 +11,12 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.util.Log;
-import android.view.DragEvent;
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -39,7 +34,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
@@ -47,7 +41,7 @@ import pl.droidsonroids.gif.GifImageView;
 public class MainActivity extends AppCompatActivity implements RecyclerViewAdapter.Callback{
     private final static String BUS_DIRECT_PARAM_AND_TEXT = "bus_direct_param_and_text";
 
-    private ImageView mImageViewBackground = null;
+    private ImageView mImageViewMainActivityBackground = null;
     private AppBarLayout mAppBarLayout = null;
     private Toolbar mToolbar = null;
 
@@ -57,6 +51,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     private ImageView mImageviewAdd = null;
     private ImageView mImageViewHanging = null;
     private MaterialDialog mMaterialDialogProgress = null;
+    private GifImageView mGifImageView = null;
+    private GifDrawable mGifDrawable = null;
 
     private List<Bus> mListBus = null;
     private Bus mAddBus = null;
@@ -67,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
 
         setContentView(R.layout.activity_main);
 
-        mImageViewBackground = (ImageView)findViewById(R.id.main_activity_background);
+        mImageViewMainActivityBackground = (ImageView)findViewById(R.id.main_activity_background);
         mAppBarLayout = (AppBarLayout)findViewById(R.id.appbar);
         mToolbar = (Toolbar)findViewById(R.id.toolbar);
         mImageViewCollapsing = (ImageView)findViewById(R.id.imageview_collapsing);
@@ -86,12 +82,13 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
             @Override
             public void onOffsetChanged(AppBarLayout appBarLayout, int y) {
                 int height = appBarLayout.getHeight() - mToolbar.getHeight();
-                mImageViewBackground.setAlpha(1 - Float.valueOf(y + height) / Float.valueOf(height));
+                mImageViewCollapsing.setAlpha(Float.valueOf(y + height) / Float.valueOf(height));
+                mImageViewMainActivityBackground.setAlpha(1 - mImageViewCollapsing.getAlpha());
             }
         });
 
         int[] titleImage = {R.mipmap.main_title_ya, R.mipmap.main_title_pipi, R.mipmap.main_title_looksky};
-        mImageViewCollapsing.setImageResource(titleImage[new Random().nextInt(titleImage.length)]);
+        mImageViewCollapsing.setImageResource(titleImage[SettingDBHelper.getAndUpdateTitleBackground()]);
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
@@ -281,6 +278,8 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
                             mAddBus.setDirectParam(map.get(BUS_DIRECT_PARAM_AND_TEXT).get(which)[0]);
                             mAddBus.setDirectText(text.toString());
 
+                            //先幫getAllStop開啟progress，因為getAllStop只是解析loadHtmlSource回傳的網頁原始碼，主要的讀取時間是在loadHtmlSource
+                            showProgressDialog(true);
                             loadHtmlSource(mAddBus);
                         }
                     })
@@ -345,13 +344,9 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
                     .itemsCallback(new MaterialDialog.ListCallback() {
                         @Override
                         public void onSelection(MaterialDialog dialog, View view, int which, CharSequence text) {
-                            if(text.toString().contains("(") || text.toString().contains(")")){
-                                Toast.makeText(MainActivity.this, "目前不支援有包含括弧的站名", Toast.LENGTH_LONG).show();
-                            }else{
-                                mAddBus.setOnBus(text.toString());
-                                insertBus(mAddBus);
-                                dialog.dismiss();
-                            }
+                            mAddBus.setOnBus(text.toString());
+                            insertBus(mAddBus);
+                            dialog.dismiss();
                         }
                     })
                     .negativeText("取消")
@@ -362,7 +357,6 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
 
         @Override
         protected void onPreExecute() {
-            showProgressDialog(true);
             super.onPreExecute();
         }
     }
@@ -461,26 +455,23 @@ public class MainActivity extends AppCompatActivity implements RecyclerViewAdapt
     }
 
     private void showProgressDialog(boolean show) {
-        if(show){
-            if(mMaterialDialogProgress == null){
-                mMaterialDialogProgress = new MaterialDialog.Builder(MainActivity.this)
-                        .title("等我一下")
-                        .customView(R.layout.dialog_progress, true)
-                        .build();
-            }
-            mMaterialDialogProgress.show();
-        }else{
-            mMaterialDialogProgress.dismiss();
-        }
-
         try {
-            GifImageView gifImageView = (GifImageView) mMaterialDialogProgress.getCustomView().findViewById(R.id.dialog_progress_gifImageView);
-            GifDrawable gifDrawable = new GifDrawable(getResources(), R.mipmap.progress);
-            gifImageView.setImageDrawable(gifDrawable);
             if(show){
-                gifDrawable.start();
-            }else {
-                gifDrawable.stop();
+                if(mMaterialDialogProgress == null){
+                    mMaterialDialogProgress = new MaterialDialog.Builder(MainActivity.this)
+                            .title("我看看喔")
+                            .customView(R.layout.dialog_progress, true)
+                            .build();
+                }
+                mMaterialDialogProgress.show();
+
+                if(mGifImageView == null) mGifImageView = (GifImageView) mMaterialDialogProgress.getCustomView().findViewById(R.id.dialog_progress_gifImageView);
+                if(mGifDrawable == null) mGifDrawable = new GifDrawable(getResources(), R.mipmap.progress);
+                mGifImageView.setImageDrawable(mGifDrawable);
+                mGifDrawable.start();
+            }else{
+                if(mGifDrawable != null) mGifDrawable.stop();
+                mMaterialDialogProgress.dismiss();
             }
         }catch(IOException ioe){
 
