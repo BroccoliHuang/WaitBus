@@ -24,7 +24,6 @@ import pl.droidsonroids.gif.GifImageView;
  * Created by Broccoli on 2015/9/27.
  */
 public class SplashActivity extends Activity{
-    private boolean debugMode = false;
     private boolean hasUmbrella = false;
 
     private int hasUmbrellaCount = 0;
@@ -52,7 +51,7 @@ public class SplashActivity extends Activity{
 
         setContentView(R.layout.activity_splash);
 
-        if(debugMode){
+        if(DebugController.isDebug()){
             startActivity(new Intent(SplashActivity.this, MainActivity.class));
             finish();
         }else {
@@ -162,14 +161,14 @@ public class SplashActivity extends Activity{
 //                                                        mTextViewADot.setY(1070);
                                                         //hTC Desire 610
                                                         mTextViewADot.setX(192);
-                                                        mTextViewADot.setY(365);
+                                                        mTextViewADot.setY(355);
                                                         mTextViewADot.setVisibility(View.VISIBLE);
                                                         //Samsung S6
 //                                                        mTextViewBDot.setX(1010);
 //                                                        mTextViewBDot.setY(1070);
                                                         //hTC Desire 610
                                                         mTextViewBDot.setX(379);
-                                                        mTextViewBDot.setY(365);
+                                                        mTextViewBDot.setY(355);
                                                         mTextViewBDot.setVisibility(View.VISIBLE);
                                                         mTextViewADot.setAnimation(alphaAnimation);
                                                         mTextViewBDot.setAnimation(alphaAnimation);

@@ -132,10 +132,10 @@ public class WidgetService extends RemoteViewsService {
 
                             alarm(text, bus.getNumber() + " - " + bus.getDirectText(), time + " 到 " + bus.getOnBus(), alarm, true);
                         }else{
-                            handler.postDelayed(showTime, 20000);
+                            handler.postDelayed(showTime, (DebugController.isDebug()?5000:20000));
                         }
                     }else if(time.contains("未發車")){
-                        handler.postDelayed(showTime, 60000);
+                        handler.postDelayed(showTime, (DebugController.isDebug()?5000:60000));
                     }else if(time.contains("將到站")){
                         alarm(text, bus.getNumber() + " - " + bus.getDirectText(), time + " 到 " + bus.getOnBus(), alarm, true);
     //                    handler.postDelayed(showTime, 5000);
@@ -331,7 +331,7 @@ public class WidgetService extends RemoteViewsService {
 
         mNotificationManager = (NotificationManager) Common.getAppContext().getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
         final Notification notification;
-        if(Build.VERSION.SDK_INT < 19) {
+//        if(Build.VERSION.SDK_INT < 19) {
             notification = new Notification.Builder(Common.getAppContext())
                     .setSmallIcon(R.mipmap.notification_small_icon)
                     .setContentTitle(title)
@@ -339,15 +339,15 @@ public class WidgetService extends RemoteViewsService {
                     .addAction(android.R.drawable.ic_menu_close_clear_cancel, "關閉", pendingCancelIntent)
                     .setOngoing(true)
                     .build(); // 建立通知
-        }else{
-            notification = new Notification.Builder(Common.getAppContext())
-                    .setSmallIcon(R.mipmap.notification_small_icon)
-                    .setContentTitle(title)
-                    .setContentText(content)
-                    .addAction(new Notification.Action(android.R.drawable.ic_menu_close_clear_cancel, "關閉", pendingCancelIntent))
-                    .setOngoing(true)
-                    .build(); // 建立通知
-        }
+//        }else{
+//            notification = new Notification.Builder(Common.getAppContext())
+//                    .setSmallIcon(R.mipmap.notification_small_icon)
+//                    .setContentTitle(title)
+//                    .setContentText(content)
+//                    .addAction(new Notification.Action(android.R.drawable.ic_menu_close_clear_cancel, "關閉", pendingCancelIntent))
+//                    .setOngoing(true)
+//                    .build(); // 建立通知
+//        }
         mNotificationManager.notify(NotificationReceiver.NOTIFY_ID, notification); // 發送通知
     }
 
