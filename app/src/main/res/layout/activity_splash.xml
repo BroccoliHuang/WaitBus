@@ -14,7 +14,7 @@
         android:paddingRight="264dp"
         app:svg="@raw/a"
         app:pathColor="@android:color/black"
-        app:pathWidth="3"/>
+        app:pathWidth="3dp"/>
 
     <com.eftimoff.androipathview.PathView
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -25,7 +25,7 @@
         android:paddingRight="262dp"
         app:svg="@raw/m"
         app:pathColor="@android:color/black"
-        app:pathWidth="2"/>
+        app:pathWidth="2dp"/>
 
     <com.eftimoff.androipathview.PathView
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -36,7 +36,7 @@
         android:paddingRight="151dp"
         app:svg="@raw/y"
         app:pathColor="@android:color/black"
-        app:pathWidth="2"/>
+        app:pathWidth="2dp"/>
 
     <!--Samsung S6-->
     <!--android:paddingBottom="135dp"-->
@@ -49,7 +49,7 @@
         android:paddingBottom="125dp"
         app:svg="@raw/umbrella"
         app:pathColor="@android:color/black"
-        app:pathWidth="3"/>
+        app:pathWidth="3dp"/>
 
     <com.eftimoff.androipathview.PathView
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -60,7 +60,7 @@
         android:paddingLeft="55dp"
         app:svg="@raw/b"
         app:pathColor="@android:color/black"
-        app:pathWidth="3"/>
+        app:pathWidth="3dp"/>
 
     <com.eftimoff.androipathview.PathView
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -71,7 +71,7 @@
         android:paddingLeft="70dp"
         app:svg="@raw/u"
         app:pathColor="@android:color/black"
-        app:pathWidth="2"/>
+        app:pathWidth="2dp"/>
 
     <com.eftimoff.androipathview.PathView
         xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -82,7 +82,7 @@
         android:paddingLeft="146dp"
         app:svg="@raw/s"
         app:pathColor="@android:color/black"
-        app:pathWidth="2"/>
+        app:pathWidth="2dp"/>
 
     <TextView android:id="@+id/textview_a_dot"
         android:layout_width="wrap_content"

@@ -80,14 +80,14 @@ public class SplashActivity extends Activity{
                 mGifImageViewPlugin.setImageDrawable(mGifDrawableA);
                 mGifDrawableA.addAnimationListener(new AnimationListener() {
                     @Override
-                    public void onAnimationCompleted() {
+                    public void onAnimationCompleted(int loopNumber) {
                         mGifDrawableA.stop();
                         try {
                             mGifDrawableB = new GifDrawable(getResources(), R.mipmap.plugin_b);
                             mGifImageViewPlugin.setImageDrawable(mGifDrawableB);
                             mGifDrawableB.addAnimationListener(new AnimationListener() {
                                 @Override
-                                public void onAnimationCompleted() {
+                                public void onAnimationCompleted(int loopNumber) {
                                     mGifDrawableB.stop();
                                 }
                             });
@@ -205,7 +205,7 @@ public class SplashActivity extends Activity{
             mGifImageViewPlugin.setImageDrawable(mGifDrawableC);
             mGifDrawableC.addAnimationListener(new AnimationListener() {
                 @Override
-                public void onAnimationCompleted() {
+                public void onAnimationCompleted(int loopNumber) {
                     mGifDrawableC.stop();
                     startMainActivity();
                 }

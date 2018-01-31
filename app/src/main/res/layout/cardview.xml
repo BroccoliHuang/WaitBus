@@ -52,7 +52,7 @@
                 android:layout_height="36dp"
                 android:visibility="gone"
                 app:svg="@raw/alarm_off"
-                app:pathWidth="1"/>
+                app:pathWidth="1dp"/>
 
             <com.eftimoff.androipathview.PathView
                 xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -61,7 +61,7 @@
                 android:layout_height="36dp"
                 android:visibility="gone"
                 app:svg="@raw/alarm_on"
-                app:pathWidth="1"/>
+                app:pathWidth="1dp"/>
         </FrameLayout>
 
     </RelativeLayout>
